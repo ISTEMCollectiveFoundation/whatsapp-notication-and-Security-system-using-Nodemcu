@@ -1,0 +1,72 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <WiFiClient.h>
+#include <UrlEncode.h>
+
+const char* ssid = "ADD_YOUR_SSID";
+const char* password = "ADD_YOUR_PASSWORD";
+
+// add +international_country_code + phone number
+// Pakistan +92, example: 913012222222
+String phoneNumber = "REPLACE_WITH_YOUR_PHONE_NUMBER";
+String apiKey = "REPLACE_WITH_API_KEY";
+
+int led_pin = 14;  
+int sensor_pin = 13;
+
+void sendMessage(String message){
+
+  // Data to send with HTTP POST
+  String url = "http://api.callmebot.com/whatsapp.php?phone=" + phoneNumber + "&apikey=" + apiKey + "&text=" + urlEncode(message);
+  WiFiClient client;    
+  HTTPClient http;
+  http.begin(client, url);
+
+  // Specify content-type header
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  
+  // Send HTTP POST request
+  int httpResponseCode = http.POST(url);
+  if (httpResponseCode == 200){
+    Serial.println("Message sent successfully");
+  }
+  else{
+    Serial.println("Error sending the message");
+    Serial.print("HTTP response code: ");
+    Serial.println(httpResponseCode);
+  }
+
+  // Free resources
+  http.end();
+}
+
+void setup() {
+  Serial.begin(115200);
+
+    pinMode(sensor_pin, INPUT); 
+  pinMode(led_pin, OUTPUT); 
+  digitalWrite (led_pin, LOW);
+
+  WiFi.begin(ssid, password);
+  Serial.println("Connecting");
+  while(WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.print("Connected to WiFi network with IP Address: ");
+  Serial.println(WiFi.localIP());
+}
+
+void loop() {
+   int state = digitalRead(sensor_pin); 
+   if (state == HIGH) {            // if motion detected
+   digitalWrite(led_pin, HIGH);  // turn LED ON
+   sendMessage("Motion Detected!"); //send message
+   delay(5000);
+ } 
+ else {
+   digitalWrite(led_pin, LOW); // turn LED OFF if we have no motion
+ }
+  
+}
